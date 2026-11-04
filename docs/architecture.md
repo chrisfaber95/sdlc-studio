@@ -14,8 +14,25 @@
 Every generation goes through the homelab LLM router (H-012) via `RouterClient`. `HttpRouterClient` is the real
 implementation, `StubRouterClient` is for tests. Each result carries the tier that served it; failures are a typed
 `RouterError` (`unavailable`, `timeout`, `unauthorized`, `rejected`, `bad_response`). The tier per stage is one table:
-`backend/src/router/tiers.ts`. The router's wire format is assumed (see `src/router/http.ts`) until checked against
+`STAGE_TIERS` in `backend/src/router/prompts.ts`. The router's wire format is assumed (see `src/router/http.ts`) until checked against
 H-012's docs. The app has no Claude API key setting; `ANTHROPIC_API_KEY` is ignored.
+
+## Generation pipeline
+Artifact shapes and their validators live in `backend/src/pipeline/artifact-schemas.ts`; prompt recipes, the tier
+per stage and the citation rules in `backend/src/router/prompts.ts`; the ordering logic in
+`backend/src/pipeline/service.ts`. Router output is parsed as JSON and validated before anything is stored; an
+invalid answer or a router failure stores nothing (HTTP 502, 504 on timeout, with a `router_*` or `invalid_output`
+code). Citations come only from the router. Stages are strictly ordered: idea, requirements, architecture, test
+plan; a stage reads the latest version of the one before (the test plan also checks its links against the
+requirements). Scaffold generation is not implemented yet (501).
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /api/ideas` `{stack, topic, effort, prompt?}` | At least 3 ideas, nothing stored |
+| `POST /api/projects/from-idea` `{stack, idea, tier?, prompt?}` | Creates a project in stage `ideate` with the idea as version 1 |
+| `POST /api/projects/:id/generate/:kind` `{prompt?}` | `requirements`, `architecture` or `test_plan`; adds a new version |
+| `GET /api/projects/:id/artifacts[?kind=]`, `GET /api/projects/:id/artifacts/:kind/:version` | All versions, one version |
+| `GET /api/projects`, `PATCH /api/projects/:id` `{stage}` | Board list; move a project (owner only) |
 
 ## Roles
 - **Owner**: a request with `Authorization: Bearer <SDLC_OWNER_TOKEN>`, or a `Tailscale-User-Login` header (set by

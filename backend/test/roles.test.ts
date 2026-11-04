@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { loadConfig } from '../src/config.ts';
 import { Store } from '../src/db/store.ts';
 import { buildApp } from '../src/http/app.ts';
+import { StubRouterClient } from '../src/router/stub.ts';
 
 const config = loadConfig({ SDLC_OWNER_IDENTITIES: 'chris@example.com', SDLC_OWNER_TOKEN: 'secret-token' });
 const owner = { authorization: 'Bearer secret-token' };
@@ -17,7 +18,7 @@ beforeEach(() => {
   exampleId = store.createProject({ title: 'demo', stack: 'vue', isExample: true }).id;
   privateId = store.createProject({ title: 'secret idea', stack: 'go' }).id;
   for (const id of [exampleId, privateId]) store.addArtifact({ projectId: id, kind: 'idea', content: 'c', tier: 'local' });
-  app = buildApp({ config, store });
+  app = buildApp({ config, store, router: new StubRouterClient() });
 });
 afterEach(() => app.close());
 
@@ -77,7 +78,7 @@ describe('visitor', () => {
   });
 
   it('gets no owner access when no owner token is configured and the header is empty', async () => {
-    const open = buildApp({ config: loadConfig({}), store });
+    const open = buildApp({ config: loadConfig({}), store, router: new StubRouterClient() });
     const res = await open.inject({ method: 'POST', url: '/api/projects', headers: { authorization: 'Bearer ' }, payload: { title: 'x', stack: 'go' } });
     expect(res.statusCode).toBe(403);
     await open.close();
