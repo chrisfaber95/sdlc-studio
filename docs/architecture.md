@@ -64,6 +64,13 @@ The app is for the tailnet only and must not be reachable from the internet. It 
 refuses `0.0.0.0`/`::`. Expose it with `tailscale serve` (never `tailscale funnel`) or bind it to the Tailscale
 address. Do not forward the port on the router or open it in the firewall.
 
+## End-to-end test
+`e2e/` (`npm run e2e`) starts the real backend with an in-memory database and a stubbed router (`e2e/stub-server.ts`)
+plus two Vite dev servers: one whose proxy authenticates as the owner (standing in for Tailscale Serve, since a plain
+download link cannot carry a header) and one without credentials for the visitor. `studio.spec.ts` covers ideas,
+choosing, all four stages, steering with version history, the ZIP contents, the board move after a reload, and the
+visitor's read-only browsing and refused writes. `npm run screenshots` rewrites `docs/screenshots/` from the same setup.
+
 ## CI
-`ci/pull-request.yml` runs lint, typecheck, tests and build on every pull request. Copy it to
+`ci/pull-request.yml` runs lint, typecheck, tests and build, and the Playwright test as a second job, on every pull request. Copy it to
 `.github/workflows/ci.yml` (the inbox cannot push workflow files).
