@@ -47,4 +47,5 @@ Items copied by the build-setup step for brief H-013. Overwrite only items from 
 | webapp-testing | skill | anthropics/skills | ca45fc4 | H-013 |
 | frontend-design | skill | anthropics/skills | ca45fc4 | H-013 |
 | artifact-schemas | skill | tailored | - | written for H-013 |
+| new-project | skill | tailored | - | written for H-013 |
 | router-prompts | skill | tailored | - | written for H-013 |

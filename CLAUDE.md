@@ -30,7 +30,7 @@ Details and sources: `.claude/kit.md`. Delegate to these agents:
 - `typescript-pro`: TypeScript typing and type design.
 - `code-reviewer`, `code-simplifier`, `comment-analyzer`, `pr-test-analyzer`, `silent-failure-hunter`, `type-design-analyzer`: PR review (pr-review-toolkit); use before opening a PR.
 
-Skills: `artifact-schemas` and `router-prompts` (written for this project; read before any generation or prompt work),
+Skills: `artifact-schemas`, `new-project` (the /new-project terminal route; drives the app's API only) and `router-prompts` (written for this project; read before any generation or prompt work),
 `webapp-testing`, `frontend-design`, plus the plugin skills (scaffold-app, build-component, data-fetching,
 accessibility-review, performance-review, build-endpoint, harden-service, design-api, write-openapi,
 review-api-change, decision-record, review-design, write-tests, coverage-gaps, fix-flaky-tests, setup, write-test,
