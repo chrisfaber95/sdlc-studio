@@ -1,7 +1,7 @@
 # sdlc-studio
 
 Chris's idea-to-scaffold workbench. Pick a stack and a topic, get scored project ideas, and take one through
-requirements, architecture, test plan and a code scaffold in one sitting; download the result as a ZIP. A lifecycle
+requirements, architecture, test plan and a code scaffold in one sitting; download the result as a ZIP or publish it to a new private GitHub repo. A lifecycle
 board (ideate, spec, design, build, ship, retro) shows every idea's stage, and saved example projects can be browsed
 read-only by visitors on the tailnet, so the app doubles as a live portfolio demo. All generation runs through the
 homelab LLM router (H-012); the app holds no Claude API key. The same flow works from a terminal with the

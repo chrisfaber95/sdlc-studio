@@ -83,6 +83,11 @@ export class StudioClient {
     return Buffer.from(await (await this.#send('GET', `/api/projects/${projectId}/download`)).arrayBuffer());
   }
 
+  /** Publishes the project to a new private GitHub repository; the answer carries `repoUrl`. */
+  publish(projectId: number, name?: string): Promise<Project> {
+    return this.#json('POST', `/api/projects/${projectId}/publish`, name ? { name } : {});
+  }
+
   /** Downloads the project ZIP to `path` and returns the number of bytes written. */
   async downloadTo(projectId: number, path: string): Promise<number> {
     const data = await this.download(projectId);

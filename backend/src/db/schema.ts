@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS projects (
   stack       TEXT NOT NULL CHECK (stack IN (${q(STACKS)})),
   stage       TEXT NOT NULL DEFAULT 'ideate' CHECK (stage IN (${q(STAGES)})),
   is_example  INTEGER NOT NULL DEFAULT 0 CHECK (is_example IN (0, 1)),
+  repo_url    TEXT,
   created_at  TEXT NOT NULL,
   updated_at  TEXT NOT NULL
 );

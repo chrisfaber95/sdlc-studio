@@ -11,6 +11,8 @@ export type Tier = 'local' | 'claude';
 export interface Me {
   role: 'owner' | 'visitor';
   identity: string | null;
+  /** The server has a GitHub token, so a project can be published to a private repository. */
+  canPublish?: boolean;
 }
 export interface Project {
   id: number;
@@ -18,6 +20,7 @@ export interface Project {
   stack: Stack;
   stage: Stage;
   isExample: boolean;
+  repoUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }

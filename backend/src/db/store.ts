@@ -12,6 +12,7 @@ const toProject = (r: Row): Project => ({
   stack: r.stack as Stack,
   stage: r.stage as Stage,
   isExample: r.is_example === 1,
+  repoUrl: (r.repo_url as string | null) ?? null,
   createdAt: r.created_at as string,
   updatedAt: r.updated_at as string,
 });
@@ -51,6 +52,9 @@ export class Store {
     this.#db = new DatabaseSync(path);
     this.#db.exec('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
     this.#db.exec(SCHEMA);
+    // Databases created before publishing existed lack this column.
+    const columns = this.#db.prepare('PRAGMA table_info(projects)').all();
+    if (!columns.some((c) => c.name === 'repo_url')) this.#db.exec('ALTER TABLE projects ADD COLUMN repo_url TEXT');
     this.#now = now;
   }
 
@@ -90,6 +94,11 @@ export class Store {
         this.#now().toISOString(),
         id,
       );
+    return this.getProject(id);
+  }
+
+  setRepoUrl(id: number, repoUrl: string): Project | undefined {
+    this.#db.prepare('UPDATE projects SET repo_url = ?, updated_at = ? WHERE id = ?').run(repoUrl, this.#now().toISOString(), id);
     return this.getProject(id);
   }
 

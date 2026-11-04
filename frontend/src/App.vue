@@ -53,6 +53,7 @@ onMounted(async () => {
         :id="route.id"
         :key="route.id"
         :read-only="readOnly"
+        :can-publish="me?.canPublish === true"
       />
       <IdeasView v-else-if="route.name === 'ideas' && !readOnly" />
       <BoardView

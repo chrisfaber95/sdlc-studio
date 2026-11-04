@@ -51,6 +51,8 @@ export const api = {
     request<Artifact>(`/api/projects/${id}/generate/${kind}`, { method: 'POST', body: prompt ? { prompt } : {} }),
   moveProject: (id: number, stage: Stage) =>
     request<Project>(`/api/projects/${id}`, { method: 'PATCH', body: { stage } }),
+  publish: (id: number, name?: string) =>
+    request<Project>(`/api/projects/${id}/publish`, { method: 'POST', body: name ? { name } : {} }),
   downloadUrl: (id: number) => `/api/projects/${id}/download`,
 };
 

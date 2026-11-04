@@ -39,6 +39,7 @@ test file exist, and refuses unsafe paths (`..`, absolute) and the paths the ZIP
 | `POST /api/projects/:id/generate/:kind` `{prompt?}` | `requirements`, `architecture`, `test_plan` or `scaffold`; adds a new version |
 | `GET /api/projects/:id/artifacts[?kind=]`, `GET /api/projects/:id/artifacts/:kind/:version` | All versions, one version |
 | `GET /api/projects/:id/download` | One ZIP with the latest version of every artifact (see below); visitors may for examples |
+| `POST /api/projects/:id/publish` `{name?}` | Owner only. Creates a new private GitHub repo and commits the ZIP's files (same content, without the top folder) in one commit; stores `repoUrl`. Once per project; 409 `already_published` / `name_taken`, 503 without a token |
 | `GET /api/projects`, `PATCH /api/projects/:id` `{stage}` | Board list; move a project (owner only) |
 
 ## ZIP download
@@ -46,6 +47,14 @@ test file exist, and refuses unsafe paths (`..`, absolute) and the paths the ZIP
 the CI workflow at its own path (`.github/workflows/ci.yml`), the scaffold files at the root, and `artifacts.json`
 (version, tier and extra prompt per artifact). Stages not generated yet are left out. The ZIP is written by
 `src/pipeline/zip.ts` (no dependency).
+
+## Publish to a private GitHub repo
+Besides the ZIP, the owner can push the project to a new private repository. `src/github/publisher.ts` talks to the GitHub
+REST API (no git binary): it creates the repo (`auto_init`, because the git data API refuses an empty repo), then adds
+one commit with all files via the tree and commit endpoints. Set `SDLC_GITHUB_TOKEN` (and `SDLC_GITHUB_OWNER` for an
+organisation); without a token `/api/me` reports `canPublish: false` and the UI hides the form. The token needs repository
+create and contents write rights, plus the Workflows permission because the generated CI file is committed too. It stays on
+the server and is never in a response or error message. The repo URL is kept on the project (`projects.repo_url`).
 
 ## Roles
 - **Owner**: a request with `Authorization: Bearer <SDLC_OWNER_TOKEN>`, or a `Tailscale-User-Login` header (set by
