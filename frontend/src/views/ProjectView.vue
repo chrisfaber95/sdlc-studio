@@ -6,7 +6,7 @@ import ErrorBanner from '../components/ErrorBanner.vue';
 import { KIND_LABELS } from '../types';
 import type { Artifact, ArtifactKind, GeneratedKind, Project } from '../types';
 
-const props = defineProps<{ id: number; readOnly: boolean }>();
+const props = defineProps<{ id: number; readOnly: boolean; canPublish?: boolean }>();
 
 const TABS: ArtifactKind[] = ['idea', 'requirements', 'architecture', 'test_plan', 'scaffold'];
 const PREVIOUS: Record<GeneratedKind, ArtifactKind> = {
@@ -24,6 +24,9 @@ const extraPrompt = ref('');
 const loadError = ref('');
 const genError = ref('');
 const busy = ref(false);
+const repoName = ref('');
+const publishError = ref('');
+const publishing = ref(false);
 
 const versions = computed(() =>
   artifacts.value.filter((a) => a.kind === tab.value).sort((a, b) => b.version - a.version),
@@ -62,6 +65,18 @@ async function generate(): Promise<void> {
   }
 }
 
+async function publish(): Promise<void> {
+  publishing.value = true;
+  publishError.value = '';
+  try {
+    project.value = await api.publish(props.id, repoName.value.trim() || undefined);
+  } catch (err) {
+    publishError.value = `Publishing failed: ${errorMessage(err)}`;
+  } finally {
+    publishing.value = false;
+  }
+}
+
 watch(tab, () => (genError.value = ''));
 watch(() => props.id, load);
 onMounted(load);
@@ -82,6 +97,40 @@ onMounted(load);
           data-testid="download"
         >Download ZIP</a>
       </p>
+      <p
+        v-if="project.repoUrl"
+        data-testid="repo"
+      >
+        Private repository:
+        <a
+          :href="project.repoUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+        >{{ project.repoUrl }}</a>
+      </p>
+      <form
+        v-else-if="!readOnly && canPublish"
+        data-testid="publish-form"
+        @submit.prevent="publish"
+      >
+        <label>Repository name (optional)
+          <input
+            v-model="repoName"
+            data-testid="repo-name"
+            maxlength="100"
+            pattern="[A-Za-z0-9._\-]+"
+            placeholder="defaults to the project name"
+          >
+        </label>
+        <button
+          type="submit"
+          :disabled="publishing"
+          data-testid="publish"
+        >
+          {{ publishing ? 'Publishing…' : 'Publish to a private GitHub repo' }}
+        </button>
+      </form>
+      <ErrorBanner :message="publishError" />
 
       <div
         role="tablist"

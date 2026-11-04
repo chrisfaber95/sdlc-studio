@@ -12,7 +12,7 @@ Run from the repo root; output is JSON. Env: `SDLC_URL` (app base URL), `SDLC_OW
 - `ideas <stack> <effort> <topic...>`: stack typescript|python|go|rust|vue|angular, effort small|medium|large
 - `choose <stack>`: the chosen idea JSON on stdin; creates the project in stage `ideate`
 - `generate <id> <requirements|architecture|test_plan|scaffold> [extra prompt...]`: a repeat call, or one with a prompt, stores a new version
-- `show <id> [kind]`, `projects`, `download <id> <path>`
+- `show <id> [kind]`, `projects`, `download <id> <path>`, `publish <id> [repo-name]` (new private GitHub repo; only if the owner asks, needs `SDLC_GITHUB_TOKEN` on the server)
 Code: `backend/src/client/studio-client.ts` (typed `StudioClient`); shapes: skill `artifact-schemas`.
 
 ## Flow

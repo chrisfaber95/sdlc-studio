@@ -121,6 +121,34 @@ describe('ProjectView', () => {
     expect(w.get('[data-testid=download]').attributes('href')).toBe('/api/projects/1/download');
   });
 
+  it('publishes to a private repo when the server can, then links to it', async () => {
+    const calls = stubApi(({ url, method }) => {
+      if (method === 'POST') return project({ repoUrl: 'https://github.com/me/demo' });
+      return url.endsWith('/artifacts') ? base : project();
+    });
+    const w = mount(ProjectView, { props: { id: 1, readOnly: false, canPublish: true } });
+    await flushPromises();
+    await w.get('[data-testid=repo-name]').setValue('demo');
+    await w.get('[data-testid=publish-form]').trigger('submit');
+    await flushPromises();
+    expect(calls.at(-1)).toMatchObject({ method: 'POST', url: '/api/projects/1/publish', body: { name: 'demo' } });
+    expect(w.find('[data-testid=publish-form]').exists()).toBe(false);
+    expect(w.get('[data-testid=repo] a').attributes('href')).toBe('https://github.com/me/demo');
+  });
+
+  it('shows why publishing failed and offers no publish without a token or for a visitor', async () => {
+    stubApi(({ url, method }) =>
+      method === 'POST' ? failure(409, 'name_taken', 'GitHub cannot create "demo".') : url.endsWith('/artifacts') ? base : project(),
+    );
+    const w = mount(ProjectView, { props: { id: 1, readOnly: false, canPublish: true } });
+    await flushPromises();
+    await w.get('[data-testid=publish-form]').trigger('submit');
+    await flushPromises();
+    expect(w.text()).toContain('GitHub cannot create "demo".');
+    expect(mount(ProjectView, { props: { id: 1, readOnly: false } }).find('[data-testid=publish-form]').exists()).toBe(false);
+    expect(mount(ProjectView, { props: { id: 1, readOnly: true, canPublish: true } }).find('[data-testid=publish-form]').exists()).toBe(false);
+  });
+
   it('has no generate controls for a visitor', async () => {
     stubApi(({ url }) => (url.endsWith('/artifacts') ? base : project()));
     const w = mount(ProjectView, { props: { id: 1, readOnly: true } });

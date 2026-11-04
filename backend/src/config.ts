@@ -10,6 +10,11 @@ export interface Config {
   /** Shared secret for owner access without Tailscale identity headers (CLI, skill, tests). */
   ownerToken: string;
   dbPath: string;
+  /** GitHub token for "Publish to a private repo". Empty: publishing is switched off. */
+  githubToken: string;
+  /** Organisation to create repositories in. Empty: the token owner's own account. */
+  githubOwner: string;
+  githubApiUrl: string;
   /** The built Vue app (frontend/dist), served next to the API. Empty: API only. */
   staticDir: string;
 }
@@ -52,6 +57,9 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     ownerIdentities: list(env.SDLC_OWNER_IDENTITIES),
     ownerToken: env.SDLC_OWNER_TOKEN ?? '',
     dbPath: env.SDLC_DB_PATH ?? './data/sdlc-studio.db',
+    githubToken: (env.SDLC_GITHUB_TOKEN ?? '').trim(),
+    githubOwner: (env.SDLC_GITHUB_OWNER ?? '').trim(),
+    githubApiUrl: (env.SDLC_GITHUB_API_URL ?? 'https://api.github.com').trim().replace(/\/+$/, ''),
     staticDir: (env.SDLC_STATIC_DIR ?? DEFAULT_STATIC_DIR).trim(),
   };
 }

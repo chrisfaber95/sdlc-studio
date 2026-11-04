@@ -16,6 +16,8 @@ export interface Project {
   stack: Stack;
   stage: Stage;
   isExample: boolean;
+  /** The private GitHub repository the project was published to, if any. */
+  repoUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

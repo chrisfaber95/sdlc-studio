@@ -98,7 +98,7 @@ describe('owner', () => {
       remoteAddress: '127.0.0.1',
       headers: { 'tailscale-user-login': 'Chris@Example.com' },
     });
-    expect(res.json()).toEqual({ role: 'owner', identity: 'chris@example.com' });
+    expect(res.json()).toEqual({ role: 'owner', identity: 'chris@example.com', canPublish: false });
   });
 
   it('creates a project and moves it between stages', async () => {

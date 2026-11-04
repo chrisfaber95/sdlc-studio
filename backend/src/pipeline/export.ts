@@ -56,18 +56,15 @@ export interface ProjectZip {
   data: Buffer;
 }
 
-/**
- * One ZIP with the latest version of every stored artifact of the project: docs/ for the spec, architecture
- * (with each diagram as a .mmd file) and test plan, the CI workflow at its own path, the scaffold files at the
- * root, and artifacts.json listing the version and tier of each. Missing stages are simply left out.
- */
-export function buildProjectZip(store: Store, project: Project): ProjectZip {
+export const projectSlug = (project: Project): string => slug(project.title);
+
+/** The files of the project (ZIP and git repository alike), with paths relative to the project root. */
+export function buildProjectFiles(store: Store, project: Project): ZipEntry[] {
   const latest = (kind: ArtifactKind) => store.latestArtifact(project.id, kind);
   const entries: ZipEntry[] = [];
   const manifest: Record<string, { version: number; tier: string; prompt: string | null; createdAt: string }> = {};
   const note = (a: Artifact) => (manifest[a.kind] = { version: a.version, tier: a.tier, prompt: a.prompt, createdAt: a.createdAt });
-  const root = slug(project.title);
-  const add = (path: string, content: string) => entries.push({ path: `${root}/${path}`, content });
+  const add = (path: string, content: string) => entries.push({ path, content });
 
   const idea = latest('idea');
   if (idea) {
@@ -100,5 +97,16 @@ export function buildProjectZip(store: Store, project: Project): ProjectZip {
     for (const f of sc.files) add(f.path, f.content);
   }
   add('artifacts.json', JSON.stringify({ project: { id: project.id, title: project.title, stack: project.stack, stage: project.stage }, artifacts: manifest }, null, 2) + '\n');
+  return entries;
+}
+
+/**
+ * One ZIP with the latest version of every stored artifact of the project: docs/ for the spec, architecture
+ * (with each diagram as a .mmd file) and test plan, the CI workflow at its own path, the scaffold files at the
+ * root, and artifacts.json listing the version and tier of each. Missing stages are simply left out.
+ */
+export function buildProjectZip(store: Store, project: Project): ProjectZip {
+  const root = projectSlug(project);
+  const entries = buildProjectFiles(store, project).map((e) => ({ ...e, path: `${root}/${e.path}` }));
   return { filename: `${root}.zip`, data: zip(entries) };
 }

@@ -11,7 +11,8 @@ const USAGE = `usage (env: SDLC_URL, SDLC_OWNER_TOKEN):
   cli.ts generate <id> <kind> [prompt...]  kind: ${GENERATED_KINDS.join('|')}
   cli.ts show <id> [kind]                  artifacts with version and tier
   cli.ts projects
-  cli.ts download <id> <path>`;
+  cli.ts download <id> <path>
+  cli.ts publish <id> [repo-name]          new private GitHub repo with the project files`;
 
 const fail = (msg: string): never => {
   throw new Error(msg);
@@ -47,6 +48,10 @@ async function run(argv: string[]): Promise<unknown> {
     case 'download': {
       if (!a[1]) return fail('download needs a target path');
       return { path: a[1], bytes: await client.downloadTo(id(a[0]), a[1]) };
+    }
+    case 'publish': {
+      const project = await client.publish(id(a[0]), a[1]);
+      return { repoUrl: project.repoUrl };
     }
     default:
       return fail(USAGE);
