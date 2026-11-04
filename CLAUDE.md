@@ -15,7 +15,12 @@ router (H-012); the app holds no Claude API key. Vue 3 is used for the frontend.
 - Not reachable from the internet; stays within the homelab network rules.
 
 ## Stack, commands, layout
-To be filled in by the first build task. (Backend language is not chosen: the planner proposes one, Chris decides.)
+TypeScript everywhere. Backend: Fastify + SQLite (`node:sqlite`, Node 24) in `backend/`; frontend: Vue 3 + Vite in
+`frontend/`; npm workspaces from the root.
+- `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (the CI set; run all four before a PR).
+- Config is env vars (`.env.example`); no Claude API key anywhere, generation only via `RouterClient`.
+- Tier per stage: `backend/src/router/tiers.ts`. Roles: `backend/src/http/roles.ts` (visitor writes get 403).
+- Details: `docs/architecture.md`. CI workflow lives in `ci/pull-request.yml` until installed as `.github/workflows/ci.yml`.
 
 ## Build kit
 Details and sources: `.claude/kit.md`. Delegate to these agents:
