@@ -109,7 +109,7 @@ onMounted(load);
         >{{ project.repoUrl }}</a>
       </p>
       <form
-        v-else-if="!readOnly && canPublish"
+        v-else-if="!readOnly"
         data-testid="publish-form"
         @submit.prevent="publish"
       >
@@ -124,11 +124,17 @@ onMounted(load);
         </label>
         <button
           type="submit"
-          :disabled="publishing"
+          :disabled="publishing || !canPublish"
           data-testid="publish"
         >
           {{ publishing ? 'Publishing…' : 'Publish to a private GitHub repo' }}
         </button>
+        <p
+          v-if="!canPublish"
+          data-testid="publish-off"
+        >
+          Publishing is off: the server has no <code>SDLC_GITHUB_TOKEN</code>. Set it and restart to enable this button.
+        </p>
       </form>
       <ErrorBanner :message="publishError" />
 
