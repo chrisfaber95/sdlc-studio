@@ -1,3 +1,4 @@
+import type { Stack } from '../db/model.ts';
 import type { Citation } from '../router/types.ts';
 
 /**
@@ -70,6 +71,15 @@ export interface TestPlan {
   testCases: TestCase[];
   ciWorkflow: { path: string; content: string };
   citations?: Citation[];
+}
+
+export interface ScaffoldFile {
+  path: string;
+  content: string;
+}
+export interface Scaffold {
+  summary: string;
+  files: ScaffoldFile[];
 }
 
 type Obj = Record<string, unknown>;
@@ -243,4 +253,38 @@ export function checkTestPlanLinks(plan: TestPlan, requirements: Requirements): 
       if (!known.has(id)) fail(`testCases[${tc.id}].acceptanceCriteria`, `unknown acceptance criterion ${id}`);
     }
   }
+}
+
+/** Files every scaffold must have, per stack: the build manifest. */
+const MANIFESTS: Record<Stack, RegExp> = {
+  typescript: /^package\.json$/,
+  python: /^pyproject\.toml$/,
+  go: /^go\.mod$/,
+  rust: /^Cargo\.toml$/,
+  vue: /^package\.json$/,
+  angular: /^angular\.json$/,
+};
+const TEST_FILE = /(^|\/)(tests?\/|test_[^/]*|[^/]*_test\.\w+|[^/]*\.(test|spec)\.\w+$)/;
+/** Paths the ZIP fills from the other stages, so a scaffold may not use them. */
+const RESERVED = /^(docs\/|\.github\/workflows\/|artifacts\.json$)/;
+
+function filePath(v: unknown, path: string): string {
+  const p = text(v, path, 200);
+  if (p.startsWith('/') || p.includes('\\') || p.split('/').some((seg) => seg === '' || seg === '.' || seg === '..')) {
+    fail(path, 'must be a relative path with forward slashes and no ".." segments');
+  }
+  if (RESERVED.test(p)) fail(path, 'docs/, .github/workflows/ and artifacts.json are reserved for the other stages');
+  return p;
+}
+
+export function parseScaffold(v: unknown, stack: Stack): Scaffold {
+  const o = object(v, 'scaffold');
+  const files = list(o.files, 'files', 3, (f, p) => {
+    const fo = object(f, p);
+    return { path: filePath(fo.path, `${p}.path`), content: text(fo.content, `${p}.content`, 50_000) };
+  }, 60);
+  uniqueIds(files.map((f) => f.path), 'files');
+  if (!files.some((f) => MANIFESTS[stack].test(f.path))) fail('files', `a ${stack} scaffold needs ${MANIFESTS[stack].source.replace(/[\^$\\]/g, '')}`);
+  if (!files.some((f) => TEST_FILE.test(f.path) || /#\[test\]/.test(f.content))) fail('files', 'needs a placeholder test');
+  return { summary: text(o.summary, 'summary'), files };
 }

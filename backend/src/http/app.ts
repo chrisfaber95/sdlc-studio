@@ -8,6 +8,7 @@ import { Pipeline, PipelineError, GENERATED_KINDS } from '../pipeline/service.ts
 import { EFFORTS, SchemaError } from '../pipeline/artifact-schemas.ts';
 import { STAGE_TIERS } from '../router/prompts.ts';
 import type { RouterClient } from '../router/types.ts';
+import { buildProjectZip } from '../pipeline/export.ts';
 import { registerRoles } from './roles.ts';
 
 export function buildApp(deps: { config: Config; store: Store; router: RouterClient }): FastifyInstance {
@@ -85,9 +86,6 @@ export function buildApp(deps: { config: Config; store: Store; router: RouterCli
     const project = visible(req, reply, (req.params as { id: string }).id);
     if (!project) return;
     const { kind } = req.params as { kind: string };
-    if (kind === 'scaffold') {
-      return reply.code(501).send({ error: 'not_implemented', message: 'Scaffold generation is not available yet.' });
-    }
     if (!isOneOf(GENERATED_KINDS, kind)) return bad(reply, `kind must be one of ${GENERATED_KINDS.join(', ')}`);
     const p = extraPrompt(reply, ((req.body ?? {}) as Record<string, unknown>).prompt);
     if (!p.ok) return;
@@ -101,6 +99,17 @@ export function buildApp(deps: { config: Config; store: Store; router: RouterCli
     if (!isOneOf(ARTIFACT_KINDS, kind)) return bad(reply, 'unknown artifact kind');
     const artifact = store.listArtifacts(project.id, kind).find((a) => a.version === Number(version));
     return artifact ?? reply.code(404).send({ error: 'not_found' });
+  });
+
+  // One ZIP with the latest version of every artifact. A GET, so visitors may download example projects.
+  app.get('/api/projects/:id/download', async (req, reply) => {
+    const project = visible(req, reply, (req.params as { id: string }).id);
+    if (!project) return;
+    const { filename, data } = buildProjectZip(store, project);
+    return reply
+      .header('content-type', 'application/zip')
+      .header('content-disposition', `attachment; filename="${filename}"`)
+      .send(data);
   });
 
   app.post('/api/projects', async (req, reply) => {
