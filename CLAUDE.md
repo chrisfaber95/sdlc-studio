@@ -19,7 +19,7 @@ TypeScript everywhere. Backend: Fastify + SQLite (`node:sqlite`, Node 24) in `ba
 `frontend/`; npm workspaces from the root.
 - `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (the CI set; run all four before a PR).
 - Config is env vars (`.env.example`); no Claude API key anywhere, generation only via `RouterClient`.
-- Tier per stage: `backend/src/router/tiers.ts`. Roles: `backend/src/http/roles.ts` (visitor writes get 403).
+- Tier per stage: `backend/src/router/prompts.ts`. Roles: `backend/src/http/roles.ts` (visitor writes get 403).
 - Details: `docs/architecture.md`. CI workflow lives in `ci/pull-request.yml` until installed as `.github/workflows/ci.yml`.
 
 ## Build kit
