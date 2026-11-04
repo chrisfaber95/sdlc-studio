@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       host: '127.0.0.1',
       proxy: {
         '/api': {
-          target: env.SDLC_API_URL ?? 'http://127.0.0.1:8110',
+          target: env.SDLC_API_URL ?? 'http://127.0.0.1:8111',
           ...(env.SDLC_API_AUTH && { headers: { Authorization: env.SDLC_API_AUTH } }),
         },
       },

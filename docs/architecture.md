@@ -15,8 +15,9 @@
 Every generation goes through the homelab LLM router (H-012) via `RouterClient`. `HttpRouterClient` is the real
 implementation, `StubRouterClient` is for tests. Each result carries the tier that served it; failures are a typed
 `RouterError` (`unavailable`, `timeout`, `unauthorized`, `rejected`, `bad_response`). The tier per stage is one table:
-`STAGE_TIERS` in `backend/src/router/prompts.ts`. The router's wire format is assumed (see `src/router/http.ts`) until checked against
-H-012's docs. The app has no Claude API key setting; `ANTHROPIC_API_KEY` is ignored.
+`STAGE_TIERS` in `backend/src/router/prompts.ts`. The client speaks the router's `POST /v1/route` (H-012,
+`docs/router.md` in homelab): our tier `local` is router tier `easy`, `claude` is `hard`, and the tier stored on an
+artifact is the router's `backend` that actually answered. The app has no Claude API key setting; `ANTHROPIC_API_KEY` is ignored.
 
 ## Generation pipeline
 Artifact shapes and their validators live in `backend/src/pipeline/artifact-schemas.ts`; prompt recipes, the tier

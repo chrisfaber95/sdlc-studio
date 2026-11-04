@@ -22,12 +22,12 @@ describe('HttpRouterClient', () => {
     let seen: { url: string; init: RequestInit } | undefined;
     const c = client(async (url, init) => {
       seen = { url: String(url), init: init! };
-      return json({ content: 'hello', tier: 'claude', citations: [{ title: 't', url: 'http://x' }] });
+      return json({ output: 'hello', backend: 'claude', citations: [{ title: 't', url: 'http://x' }] });
     });
     const res = await c.generate({ ...req, tier: 'local' });
     expect(res).toEqual({ content: 'hello', tier: 'claude', citations: [{ title: 't', url: 'http://x' }] });
-    expect(seen?.url).toBe('http://router/v1/generate');
-    expect(JSON.parse(seen?.init.body as string)).toMatchObject({ caller: 'sdlc-studio', tier: 'local' });
+    expect(seen?.url).toBe('http://router/v1/route');
+    expect(JSON.parse(seen?.init.body as string)).toMatchObject({ caller: 'sdlc-studio', tier: 'easy' });
     expect((seen?.init.headers as Record<string, string>).authorization).toBe('Bearer tok');
   });
 
@@ -39,6 +39,21 @@ describe('HttpRouterClient', () => {
     [422, 'rejected'],
   ] as const)('maps HTTP %i to %s', async (status, code) => {
     expect(await codeOf(client(async () => json({}, status)).generate(req))).toBe(code);
+  });
+
+  it('asks the router for tier hard when the stage wants Claude', async () => {
+    let body: Record<string, unknown> = {};
+    const c = client(async (_url, init) => {
+      body = JSON.parse(init!.body as string) as Record<string, unknown>;
+      return json({ output: 'x', backend: 'claude' });
+    });
+    await c.generate({ ...req, tier: 'claude' });
+    expect(body.tier).toBe('hard');
+  });
+
+  it("maps the router's timeout error to timeout", async () => {
+    const c = client(async () => json({ error: { code: 'timeout', message: 'too slow' } }, 504));
+    expect(await codeOf(c.generate(req))).toBe('timeout');
   });
 
   it('maps a network failure to unavailable', async () => {
@@ -57,10 +72,10 @@ describe('HttpRouterClient', () => {
 
   it.each([
     ['invalid JSON', () => new Response('<html>', { status: 200 })],
-    ['missing content', () => json({ tier: 'local' })],
-    ['empty content', () => json({ content: '', tier: 'local' })],
-    ['missing tier', () => json({ content: 'x' })],
-    ['unknown tier', () => json({ content: 'x', tier: 'gpt' })],
+    ['missing output', () => json({ backend: 'local' })],
+    ['empty output', () => json({ output: '', backend: 'local' })],
+    ['missing backend', () => json({ output: 'x' })],
+    ['unknown backend', () => json({ output: 'x', backend: 'gpt' })],
   ])('maps %s to bad_response', async (_n, make) => {
     expect(await codeOf(client(async () => make()).generate(req))).toBe('bad_response');
   });
