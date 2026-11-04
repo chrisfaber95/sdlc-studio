@@ -52,6 +52,12 @@ the CI workflow at its own path (`.github/workflows/ci.yml`), the scaffold files
 - **Visitor**: everyone else. May only GET example projects and their artifacts (others answer 404). Every POST, PUT,
   PATCH and DELETE from a non-owner is refused with 403 by a server-side hook, before routing.
 
+## Terminal client and `/new-project`
+`backend/src/client/studio-client.ts` is a typed client of the HTTP API (`SDLC_URL`, `SDLC_OWNER_TOKEN`);
+`cli.ts` wraps it for the `/new-project` skill (`.claude/skills/new-project`). It holds no generation logic, so
+projects made there are ordinary projects with the same artifacts, versions and tiers. Writes without the owner token
+get 403. `backend/test/client.e2e.test.ts` drives idea to ZIP against a running backend with a stubbed router.
+
 ## Network exposure
 The app is for the tailnet only and must not be reachable from the internet. It binds to `127.0.0.1` by default and
 refuses `0.0.0.0`/`::`. Expose it with `tailscale serve` (never `tailscale funnel`) or bind it to the Tailscale
