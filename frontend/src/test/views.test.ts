@@ -136,7 +136,7 @@ describe('ProjectView', () => {
     expect(w.get('[data-testid=repo] a').attributes('href')).toBe('https://github.com/me/demo');
   });
 
-  it('shows why publishing failed and offers no publish without a token or for a visitor', async () => {
+  it('shows why publishing failed and explains a disabled publish without a token and hides it for a visitor', async () => {
     stubApi(({ url, method }) =>
       method === 'POST' ? failure(409, 'name_taken', 'GitHub cannot create "demo".') : url.endsWith('/artifacts') ? base : project(),
     );
@@ -145,7 +145,10 @@ describe('ProjectView', () => {
     await w.get('[data-testid=publish-form]').trigger('submit');
     await flushPromises();
     expect(w.text()).toContain('GitHub cannot create "demo".');
-    expect(mount(ProjectView, { props: { id: 1, readOnly: false } }).find('[data-testid=publish-form]').exists()).toBe(false);
+    const off = mount(ProjectView, { props: { id: 1, readOnly: false } });
+    await flushPromises();
+    expect(off.get('[data-testid=publish]').attributes('disabled')).toBeDefined();
+    expect(off.get('[data-testid=publish-off]').text()).toContain('SDLC_GITHUB_TOKEN');
     expect(mount(ProjectView, { props: { id: 1, readOnly: true, canPublish: true } }).find('[data-testid=publish-form]').exists()).toBe(false);
   });
 
