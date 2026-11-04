@@ -12,12 +12,13 @@ import {
   parseIdeas,
   parseModelJson,
   parseRequirements,
+  parseScaffold,
   parseTestPlan,
   SchemaError,
 } from './artifact-schemas.ts';
 import type { Effort, Idea, Requirements } from './artifact-schemas.ts';
 
-export const GENERATED_KINDS = ['requirements', 'architecture', 'test_plan'] as const;
+export const GENERATED_KINDS = ['requirements', 'architecture', 'test_plan', 'scaffold'] as const;
 export type GeneratedKind = (typeof GENERATED_KINDS)[number];
 
 /** Strict stage order: each stage is built from the latest artifact of the one before it. */
@@ -25,6 +26,7 @@ const PREVIOUS: Record<GeneratedKind, ArtifactKind> = {
   requirements: 'idea',
   architecture: 'requirements',
   test_plan: 'architecture',
+  scaffold: 'test_plan',
 };
 
 export class PipelineError extends Error {
@@ -132,7 +134,9 @@ export class Pipeline {
         ? withCitations(this.#parse(raw, parseRequirements), raw.citations)
         : kind === 'architecture'
           ? withCitations(this.#parse(raw, parseArchitecture), raw.citations)
-          : withCitations(
+          : kind === 'scaffold'
+            ? withCitations(this.#parse(raw, parseScaffold), raw.citations)
+            : withCitations(
               this.#parse(raw, (v) => {
                 const plan = parseTestPlan(v);
                 checkTestPlanLinks(plan, requirements!);

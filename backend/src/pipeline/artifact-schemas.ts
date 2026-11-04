@@ -72,6 +72,11 @@ export interface TestPlan {
   citations?: Citation[];
 }
 
+export interface Scaffold {
+  files: { path: string; content: string }[];
+  citations?: Citation[];
+}
+
 type Obj = Record<string, unknown>;
 
 const fail = (path: string, msg: string): never => {
@@ -243,4 +248,19 @@ export function checkTestPlanLinks(plan: TestPlan, requirements: Requirements): 
       if (!known.has(id)) fail(`testCases[${tc.id}].acceptanceCriteria`, `unknown acceptance criterion ${id}`);
     }
   }
+}
+
+export function parseScaffold(v: unknown): Scaffold {
+  const files = list(object(v, 'scaffold').files, 'files', 1, (f, p) => {
+    const fo = object(f, p);
+    const path = text(fo.path, `${p}.path`, 300);
+    if (path.startsWith('/') || path.includes('\\') || path.split('/').some((seg) => seg === '..' || seg === '')) {
+      fail(`${p}.path`, 'must be a relative path inside the project');
+    }
+    if (typeof fo.content !== 'string') fail(`${p}.content`, 'expected a string');
+    if ((fo.content as string).length > 50_000) fail(`${p}.content`, 'longer than 50000 characters');
+    return { path, content: fo.content as string };
+  }, 80);
+  uniqueIds(files.map((f) => f.path), 'files');
+  return { files };
 }

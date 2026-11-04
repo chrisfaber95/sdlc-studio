@@ -85,9 +85,6 @@ export function buildApp(deps: { config: Config; store: Store; router: RouterCli
     const project = visible(req, reply, (req.params as { id: string }).id);
     if (!project) return;
     const { kind } = req.params as { kind: string };
-    if (kind === 'scaffold') {
-      return reply.code(501).send({ error: 'not_implemented', message: 'Scaffold generation is not available yet.' });
-    }
     if (!isOneOf(GENERATED_KINDS, kind)) return bad(reply, `kind must be one of ${GENERATED_KINDS.join(', ')}`);
     const p = extraPrompt(reply, ((req.body ?? {}) as Record<string, unknown>).prompt);
     if (!p.ok) return;

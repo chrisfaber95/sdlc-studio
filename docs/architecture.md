@@ -23,14 +23,15 @@ per stage and the citation rules in `backend/src/router/prompts.ts`; the orderin
 `backend/src/pipeline/service.ts`. Router output is parsed as JSON and validated before anything is stored; an
 invalid answer or a router failure stores nothing (HTTP 502, 504 on timeout, with a `router_*` or `invalid_output`
 code). Citations come only from the router. Stages are strictly ordered: idea, requirements, architecture, test
-plan; a stage reads the latest version of the one before (the test plan also checks its links against the
-requirements). Scaffold generation is not implemented yet (501).
+plan, scaffold; a stage reads the latest version of the one before (the test plan also checks its links against the
+requirements). The scaffold is router-generated `{files: [{path, content}]}` with safe relative paths; stack
+templates and the ZIP download are later tasks.
 
 | Endpoint | Purpose |
 | --- | --- |
 | `POST /api/ideas` `{stack, topic, effort, prompt?}` | At least 3 ideas, nothing stored |
 | `POST /api/projects/from-idea` `{stack, idea, tier?, prompt?}` | Creates a project in stage `ideate` with the idea as version 1 |
-| `POST /api/projects/:id/generate/:kind` `{prompt?}` | `requirements`, `architecture` or `test_plan`; adds a new version |
+| `POST /api/projects/:id/generate/:kind` `{prompt?}` | `requirements`, `architecture`, `test_plan` or `scaffold`; adds a new version |
 | `GET /api/projects/:id/artifacts[?kind=]`, `GET /api/projects/:id/artifacts/:kind/:version` | All versions, one version |
 | `GET /api/projects`, `PATCH /api/projects/:id` `{stage}` | Board list; move a project (owner only) |
 

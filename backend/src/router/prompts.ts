@@ -45,6 +45,9 @@ const SHAPES = {
     '"steps": [string], "expected": string, "acceptanceCriteria": ["AC-1.1"]}], ' +
     '"ciWorkflow": {"path": ".github/workflows/ci.yml", "content": "GitHub Actions YAML with on: and jobs:"}}  ' +
     '(every test case links to acceptance criterion ids taken from the requirements)',
+  scaffold:
+    '{"files": [{"path": "relative/path.ext", "content": string}]}  (a small runnable starting point for the stack: ' +
+    'manifest, entry point, one test and a README; include the CI workflow from the test plan; relative paths only)',
 } as const;
 
 export type PromptStage = keyof typeof SHAPES;
@@ -54,6 +57,7 @@ const ROLES: Record<PromptStage, string> = {
   requirements: 'You are a business analyst writing user stories with testable acceptance criteria for a small project.',
   architecture: 'You are a software architect designing a small project from its requirements.',
   test_plan: 'You are a test lead planning tests and a CI workflow for a small project.',
+  scaffold: 'You are a senior developer writing the initial code scaffold of a small project for its stack.',
 };
 
 export interface PromptInput {

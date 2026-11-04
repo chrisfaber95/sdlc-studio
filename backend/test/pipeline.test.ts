@@ -115,10 +115,24 @@ describe('ordering', () => {
     expect(router.calls.map((c) => c.stage)).toEqual(['requirements', 'requirements', 'architecture', 'test_plan']);
   });
 
-  it('answers 501 for scaffold, which is a later task', async () => {
+  it('generates the scaffold last, from the test plan, and refuses unknown kinds', async () => {
     const id = await newProject();
-    expect((await gen(id, 'scaffold')).statusCode).toBe(501);
+    expect((await gen(id, 'scaffold')).statusCode).toBe(409);
+    for (const kind of ['requirements', 'architecture', 'test_plan', 'scaffold']) expect((await gen(id, kind)).statusCode).toBe(201);
+    expect(router.calls.at(-1)).toMatchObject({ stage: 'scaffold', tier: STAGE_TIERS.scaffold });
+    expect(router.calls.at(-1)?.prompt).toContain('Pyramid');
+    expect(store.listArtifacts(id).map((a) => a.kind)).toEqual(['architecture', 'idea', 'requirements', 'scaffold', 'test_plan']);
     expect((await gen(id, 'nonsense')).statusCode).toBe(400);
+  });
+
+  it('refuses a scaffold with an unsafe or duplicate path, storing nothing', async () => {
+    const id = await newProject();
+    for (const kind of ['requirements', 'architecture', 'test_plan']) await gen(id, kind);
+    for (const files of [[{ path: '../x', content: '' }], [{ path: '/etc/x', content: '' }], [{ path: 'a', content: '' }, { path: 'a', content: '' }], []]) {
+      router.enqueue({ content: JSON.stringify({ files }) });
+      expect((await gen(id, 'scaffold')).statusCode).toBe(502);
+    }
+    expect(store.listArtifacts(id, 'scaffold')).toHaveLength(0);
   });
 
   it('refuses unknown projects', async () => {
@@ -129,7 +143,7 @@ describe('ordering', () => {
 describe('stored artifacts', () => {
   it('stores a valid artifact per stage with the router tier', async () => {
     const id = await newProject();
-    for (const kind of ['requirements', 'architecture', 'test_plan'] as const) {
+    for (const kind of ['requirements', 'architecture', 'test_plan', 'scaffold'] as const) {
       const res = await gen(id, kind);
       expect(res.statusCode).toBe(201);
       expect(res.json()).toMatchObject({ kind, version: 1, tier: STAGE_TIERS[kind] });
@@ -247,10 +261,11 @@ describe('versions and steering', () => {
     expect((await app.inject({ url: `/api/projects/${id}/artifacts/requirements/3`, headers: owner })).statusCode).toBe(404);
   });
 
-  it.each(['requirements', 'architecture', 'test_plan'] as const)('passes the extra prompt for %s to the router, last, and it changes the result', async (kind) => {
+  it.each(['requirements', 'architecture', 'test_plan', 'scaffold'] as const)('passes the extra prompt for %s to the router, last, and it changes the result', async (kind) => {
     const id = await newProject();
     await gen(id, 'requirements');
     if (kind !== 'requirements') await gen(id, 'architecture');
+    if (kind === 'scaffold') await gen(id, 'test_plan');
     const before = router.calls.length;
     const first = await gen(id, kind);
     const steered = await gen(id, kind, 'use more diagrams');

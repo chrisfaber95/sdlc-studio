@@ -47,7 +47,7 @@ export function validReply(req: GenerateRequest): { content: string } {
       ],
       ciWorkflow: { path: '.github/workflows/ci.yml', content: 'name: CI\non: [push]\njobs:\n  test:\n    runs-on: ubuntu-latest\n' },
     },
-    scaffold: {},
+    scaffold: { files: [{ path: 'README.md', content: `# Habits${tag}` }, { path: 'src/index.ts', content: 'export {};' }] },
   }[req.stage];
   return { content: JSON.stringify(body) };
 }
