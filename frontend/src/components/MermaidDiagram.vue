@@ -12,7 +12,7 @@ async function draw(): Promise<void> {
   try {
     // Loaded on demand: Mermaid is large and only the architecture tab needs it.
     const { default: mermaid } = await import('mermaid');
-    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict' });
+    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'dark' });
     svg.value = (await mermaid.render(`mermaid-${++counter}-${Date.now()}`, props.source)).svg;
   } catch (err) {
     failed.value = err instanceof Error ? err.message : 'Could not render the diagram.';
