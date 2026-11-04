@@ -45,6 +45,9 @@ const SHAPES = {
     '"steps": [string], "expected": string, "acceptanceCriteria": ["AC-1.1"]}], ' +
     '"ciWorkflow": {"path": ".github/workflows/ci.yml", "content": "GitHub Actions YAML with on: and jobs:"}}  ' +
     '(every test case links to acceptance criterion ids taken from the requirements)',
+  scaffold:
+    '{"summary": string, "files": [{"path": string, "content": string}]}  (relative paths with forward slashes; ' +
+    'never under docs/ or .github/workflows/, those are added from the other stages)',
 } as const;
 
 export type PromptStage = keyof typeof SHAPES;
@@ -54,6 +57,20 @@ const ROLES: Record<PromptStage, string> = {
   requirements: 'You are a business analyst writing user stories with testable acceptance criteria for a small project.',
   architecture: 'You are a software architect designing a small project from its requirements.',
   test_plan: 'You are a test lead planning tests and a CI workflow for a small project.',
+  scaffold:
+    'You are a senior engineer creating the starting code of a small project from its requirements, architecture and test plan. ' +
+    'Scaffold depth: hello world plus the project structure, build and test configuration, a .gitignore, a README with ' +
+    'the run and test commands, and one passing placeholder test. Keep it small and runnable; no business logic.',
+};
+
+/** What a scaffold must contain per stack; also enforced by the validator in `artifact-schemas.ts`. */
+export const SCAFFOLD_HINTS: Record<Stack, string> = {
+  typescript: 'Node + TypeScript: package.json (with build and test scripts), tsconfig.json, src/index.ts, one test file.',
+  python: 'Python 3: pyproject.toml, a package under src/, one pytest test file under tests/.',
+  go: 'Go modules: go.mod, main.go, one *_test.go file.',
+  rust: 'Cargo: Cargo.toml, src/main.rs, one #[test] (in a tests/ file or in the source).',
+  vue: 'Vue 3 + Vite + TypeScript: package.json, vite.config.ts, index.html, src/main.ts, src/App.vue, one Vitest test.',
+  angular: 'Angular (standalone components): package.json, angular.json, tsconfig.json, src/main.ts, an app component, one *.spec.ts test.',
 };
 
 export interface PromptInput {

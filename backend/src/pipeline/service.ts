@@ -1,6 +1,6 @@
 import type { Artifact, ArtifactKind, Project, Stack } from '../db/model.ts';
 import type { Store } from '../db/store.ts';
-import { buildPrompt, tierFor } from '../router/prompts.ts';
+import { buildPrompt, SCAFFOLD_HINTS, tierFor } from '../router/prompts.ts';
 import type { PromptStage } from '../router/prompts.ts';
 import { RouterError } from '../router/types.ts';
 import type { Citation, GenerateResult, RouterClient, } from '../router/types.ts';
@@ -12,12 +12,13 @@ import {
   parseIdeas,
   parseModelJson,
   parseRequirements,
+  parseScaffold,
   parseTestPlan,
   SchemaError,
 } from './artifact-schemas.ts';
 import type { Effort, Idea, Requirements } from './artifact-schemas.ts';
 
-export const GENERATED_KINDS = ['requirements', 'architecture', 'test_plan'] as const;
+export const GENERATED_KINDS = ['requirements', 'architecture', 'test_plan', 'scaffold'] as const;
 export type GeneratedKind = (typeof GENERATED_KINDS)[number];
 
 /** Strict stage order: each stage is built from the latest artifact of the one before it. */
@@ -25,6 +26,7 @@ const PREVIOUS: Record<GeneratedKind, ArtifactKind> = {
   requirements: 'idea',
   architecture: 'requirements',
   test_plan: 'architecture',
+  scaffold: 'test_plan',
 };
 
 export class PipelineError extends Error {
@@ -118,28 +120,41 @@ export class Pipeline {
       throw new PipelineError('missing_previous_stage', 409, `Generate ${prevKind} first: ${kind} is built from it.`);
     }
     const inputs = [{ label: `Latest ${prevKind} (JSON)`, json: prev.content }];
+    // Later stages also see the earlier ones they link to.
+    const extra: [ArtifactKind, string][] =
+      kind === 'test_plan'
+        ? [['requirements', 'Requirements with the acceptance criterion ids to link (JSON)']]
+        : kind === 'scaffold'
+          ? [['requirements', 'Latest requirements (JSON)'], ['architecture', 'Latest architecture (JSON)']]
+          : [];
     let requirements: Requirements | undefined;
-    if (kind === 'test_plan') {
-      const req = this.#store.latestArtifact(project.id, 'requirements');
-      if (!req) throw new PipelineError('missing_previous_stage', 409, 'Generate requirements first: the test plan links to their acceptance criteria.');
-      requirements = JSON.parse(req.content) as Requirements;
-      inputs.push({ label: 'Requirements with the acceptance criterion ids to link (JSON)', json: req.content });
+    for (const [k, label] of extra) {
+      const a = this.#store.latestArtifact(project.id, k);
+      if (!a) throw new PipelineError('missing_previous_stage', 409, `Generate ${k} first: ${kind} is built from it.`);
+      if (k === 'requirements') requirements = JSON.parse(a.content) as Requirements;
+      inputs.push({ label, json: a.content });
     }
-    const built = buildPrompt({ stage: kind, stack: project.stack, facts: [`Project: ${project.title}`], inputs, extraPrompt });
+    const facts = [`Project: ${project.title}`, ...(kind === 'scaffold' ? [`Scaffold for this stack: ${SCAFFOLD_HINTS[project.stack]}`] : [])];
+    const built = buildPrompt({ stage: kind, stack: project.stack, facts, inputs, extraPrompt });
     const raw = await this.#call(kind, built);
-    const content =
-      kind === 'requirements'
-        ? withCitations(this.#parse(raw, parseRequirements), raw.citations)
-        : kind === 'architecture'
-          ? withCitations(this.#parse(raw, parseArchitecture), raw.citations)
-          : withCitations(
-              this.#parse(raw, (v) => {
-                const plan = parseTestPlan(v);
-                checkTestPlanLinks(plan, requirements!);
-                return plan;
-              }),
-              raw.citations,
-            );
+    const content = withCitations(
+      this.#parse(raw, (v) => {
+        switch (kind) {
+          case 'requirements':
+            return parseRequirements(v);
+          case 'architecture':
+            return parseArchitecture(v);
+          case 'test_plan': {
+            const plan = parseTestPlan(v);
+            checkTestPlanLinks(plan, requirements!);
+            return plan;
+          }
+          case 'scaffold':
+            return parseScaffold(v, project.stack);
+        }
+      }),
+      raw.citations,
+    );
     return this.#store.addArtifact({
       projectId: project.id,
       kind,

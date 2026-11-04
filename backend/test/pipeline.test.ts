@@ -115,9 +115,9 @@ describe('ordering', () => {
     expect(router.calls.map((c) => c.stage)).toEqual(['requirements', 'requirements', 'architecture', 'test_plan']);
   });
 
-  it('answers 501 for scaffold, which is a later task', async () => {
+  it('refuses an unknown kind and a scaffold before the test plan exists', async () => {
     const id = await newProject();
-    expect((await gen(id, 'scaffold')).statusCode).toBe(501);
+    expect((await gen(id, 'scaffold')).statusCode).toBe(409);
     expect((await gen(id, 'nonsense')).statusCode).toBe(400);
   });
 
