@@ -17,7 +17,7 @@ router (H-012); the app holds no Claude API key. Vue 3 is used for the frontend.
 ## Stack, commands, layout
 TypeScript everywhere. Backend: Fastify + SQLite (`node:sqlite`, Node 24) in `backend/`; frontend: Vue 3 + Vite in
 `frontend/`; npm workspaces from the root.
-- `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (the CI set; run all four before a PR).
+- `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (the CI set; run all four before a PR), plus `npm run e2e` (Playwright, `e2e/`; `npm run screenshots` refreshes `docs/screenshots`).
 - Config is env vars (`.env.example`); no Claude API key anywhere, generation only via `RouterClient`.
 - Tier per stage: `backend/src/router/prompts.ts`. Roles: `backend/src/http/roles.ts` (visitor writes get 403).
 - Details: `docs/architecture.md`. CI workflow lives in `ci/pull-request.yml` until installed as `.github/workflows/ci.yml`.

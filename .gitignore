@@ -4,3 +4,5 @@ dist
 *.db-*
 .env
 coverage
+test-results
+playwright-report
