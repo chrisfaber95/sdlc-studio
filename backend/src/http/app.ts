@@ -10,6 +10,7 @@ import { STAGE_TIERS } from '../router/prompts.ts';
 import type { RouterClient } from '../router/types.ts';
 import { buildProjectZip } from '../pipeline/export.ts';
 import { registerRoles } from './roles.ts';
+import { registerStatic } from './static.ts';
 
 export function buildApp(deps: { config: Config; store: Store; router: RouterClient }): FastifyInstance {
   const { config, store, router } = deps;
@@ -134,5 +135,6 @@ export function buildApp(deps: { config: Config; store: Store; router: RouterCli
     });
   });
 
+  registerStatic(app, config.staticDir);
   return app;
 }

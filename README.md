@@ -24,8 +24,8 @@ Needs Node 24.
 npm ci
 cp .env.example .env     # export the variables, or set them in your service unit
 npm run build
-node backend/dist/main.js    # API on http://127.0.0.1:8110
-npm run dev -w frontend      # UI on http://127.0.0.1:5173, proxies /api to the API
+node backend/dist/main.js    # the app (built UI + API) on http://127.0.0.1:8111
+npm run dev -w frontend      # or: UI with hot reload on http://127.0.0.1:5173, proxies /api to the API
 ```
 The owner is whoever sends `Authorization: Bearer $SDLC_OWNER_TOKEN` or, behind Tailscale Serve, a login listed in
 `SDLC_OWNER_IDENTITIES`. Everyone else is a visitor and sees the example projects read-only.
@@ -34,13 +34,14 @@ The owner is whoever sends `Authorization: Bearer $SDLC_OWNER_TOKEN` or, behind 
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `SDLC_HOST` | `127.0.0.1` | Bind address; `0.0.0.0` and `::` are refused unless `SDLC_ALLOW_WILDCARD_BIND=1` |
-| `SDLC_PORT` | `8110` | Port |
+| `SDLC_PORT` | `8111` | Port |
 | `SDLC_ROUTER_URL` | `http://127.0.0.1:8018` | Homelab LLM router |
 | `SDLC_ROUTER_TOKEN` | empty | Token for the router |
 | `SDLC_OWNER_IDENTITIES` | empty | Comma separated Tailscale logins treated as owner (trusted only from a loopback peer) |
 | `SDLC_OWNER_TOKEN` | empty | Bearer token that grants owner access (CLI skill, scripts) |
 | `SDLC_DB_PATH` | `./data/sdlc-studio.db` | SQLite file |
-| `SDLC_URL` | none (required by the client) | Read by the `/new-project` client only: where the app runs, e.g. `http://127.0.0.1:8110` |
+| `SDLC_STATIC_DIR` | `frontend/dist` | Built UI served next to the API; without an `index.html` there the server is API only |
+| `SDLC_URL` | none (required by the client) | Read by the `/new-project` client only: where the app runs, e.g. `http://127.0.0.1:8111` |
 
 ### Checks
 `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` are the CI set (`npm run check` runs them all).
@@ -51,6 +52,10 @@ The app is not reachable from the internet. It binds to loopback by default; exp
 (never `tailscale funnel`) or bind it to the Tailscale address. Do not forward the port on the router or open it in
 the firewall. Visitors need access to the tailnet. Their writes are refused by the server (403), not just hidden in
 the UI.
+
+On the homelab box the app runs as `homelab-app-sdlc-studio.service` (unit and docs in the homelab repo,
+`docs/projects.md`): the server listens on `127.0.0.1:8112`, and `tailscale serve` publishes it on the tailnet as
+`http://homelab:8111`, adding the `Tailscale-User-Login` header that makes Chris the owner.
 
 ## Architecture
 ```

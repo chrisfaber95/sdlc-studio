@@ -43,14 +43,16 @@ export class RouterError extends Error {
   }
 }
 
+/** Parses a 200 body of the router's POST /v1/route. */
 export function parseGenerateResult(body: unknown): GenerateResult {
   if (typeof body !== 'object' || body === null) throw new RouterError('bad_response', 'Router returned no object');
   const b = body as Record<string, unknown>;
-  if (typeof b.content !== 'string' || b.content === '') {
-    throw new RouterError('bad_response', 'Router response has no content');
+  if (typeof b.output !== 'string' || b.output === '') {
+    throw new RouterError('bad_response', 'Router response has no output');
   }
-  if (!isOneOf(TIERS, b.tier)) {
-    throw new RouterError('bad_response', `Router response has no valid tier (got ${JSON.stringify(b.tier)})`);
+  // `backend` is what actually answered (after an escalation it differs from the tier asked for).
+  if (!isOneOf(TIERS, b.backend)) {
+    throw new RouterError('bad_response', `Router response has no valid backend (got ${JSON.stringify(b.backend)})`);
   }
   const citations: Citation[] = [];
   if (Array.isArray(b.citations)) {
@@ -59,5 +61,5 @@ export function parseGenerateResult(body: unknown): GenerateResult {
       if (r && typeof r.url === 'string') citations.push({ title: typeof r.title === 'string' ? r.title : r.url, url: r.url });
     }
   }
-  return { content: b.content, tier: b.tier, citations };
+  return { content: b.output, tier: b.backend, citations };
 }
