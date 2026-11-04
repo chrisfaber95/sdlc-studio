@@ -3,7 +3,8 @@
 ## Layout
 - `backend/`: Fastify + SQLite (`node:sqlite`) in TypeScript. `src/config.ts` (env), `src/db/` (schema, store),
   `src/router/` (router client), `src/http/` (roles, routes).
-- `frontend/`: Vue 3 + Vite app shell. In development Vite proxies `/api` to the backend.
+- `frontend/`: Vue 3 + Vite app (`src/views`, `src/components`, `src/api.ts`). In development Vite proxies `/api` to the
+  backend. The UI decides what to show from `GET /api/me`; the permission itself is enforced by the server.
 
 ## Data
 - `projects`: id, title, stack, stage (`ideate|spec|design|build|ship|retro`), is_example.
